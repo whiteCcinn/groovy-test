@@ -70,3 +70,120 @@ assert sum.toString() == 'The sum of 2 and 3 equals 5'
 sum = "The sum of 1 and 2 is equal to ${def a = 1; def b = 2; a + b}"
 
 println sum
+
+
+def sParameterLessClosure = "1 + 2 == ${-> 3}" 
+assert sParameterLessClosure == '1 + 2 == 3'
+
+def sOneParamClosure = "1 + 2 == ${ w -> w << 3}" 
+assert sOneParamClosure == '1 + 2 == 3'
+
+/**
+
+闭包是不带参数的无参数闭包。
+在这里，闭包使用单个java.io.StringWriter参数，您可以使用<<leftShift运算符向其附加内容。无论哪种情况，两个占位符都是嵌入式闭包。
+*/
+
+// 从外观上看，它似乎是定义要内插的表达式的更详细的方法，但是闭包比单纯的表达式有一个有趣的优点：惰性求值。
+
+def number = 1 
+def eagerGString = "value == ${number}"
+def lazyGString = "value == ${ -> number }"
+
+assert eagerGString == "value == 1" 
+assert lazyGString ==  "value == 1" 
+
+number = 2 
+assert eagerGString == "value == 1" 
+assert lazyGString ==  "value == 2" 
+
+
+String takeString(String message) {         
+    assert message instanceof String        
+    return message
+}
+
+def message = "The message is ${'hello'}"   
+assert message instanceof GString           
+
+def result = takeString(message)            
+assert result instanceof String
+assert result == 'The message is hello'
+
+
+
+// 三重双引号字符串
+// 三重双引号字符串的行为类似于双引号字符串，此外它们是多行的，例如三重单引号字符串。
+// 双引号或单引号都不需要在三重双引号字符串中转义。
+
+def name = 'Groovy'
+def template = """
+    Dear Mr ${name},
+
+    You're the winner of the lottery!
+
+    Yours sincerly,
+
+    Dave
+"""
+
+assert template.toString().contains('Groovy')
+
+
+/**
+除了通常引用的字符串外，Groovy还提供斜线字符串，它们/用作开始和结束定界符。斜线字符串对于定义正则表达式和模式特别有用，因为不需要转义反斜杠。
+*/
+
+def fooPattern = /.*foo.*/
+assert fooPattern == '.*foo.*'
+
+def escapeSlash = /The character \/ is a forward slash/
+assert escapeSlash == 'The character / is a forward slash'
+
+// 斜线字符串为多行：
+
+def multilineSlashy = /one
+    two
+    three/
+
+assert multilineSlashy.contains('\n')
+
+// 斜线字符串可以被认为是定义GString的另一种方式，但是具有不同的转义规则。因此，它们支持插值：
+
+def color = 'blue'
+def interpolatedSlashy = /a ${color} car/
+
+assert interpolatedSlashy == 'a blue car'
+
+
+// 美元斜线字符串是多行GString，以一个开头$/和一个结尾定界/$。转义字符是美元符号，它可以转义另一个美元或正斜杠。
+
+def name = "Guillaume"
+def date = "April, 1st"
+
+def dollarSlashy = $/
+    Hello $name,
+    today we're ${date}.
+
+    $ dollar sign
+    $$ escaped dollar sign
+    \ backslash
+    / forward slash
+    $/ escaped forward slash
+    $$$/ escaped opening dollar slashy
+    $/$$ escaped closing dollar slashy
+/$
+
+assert [
+    'Guillaume',
+    'April, 1st',
+    '$ dollar sign',
+    '$ escaped dollar sign',
+    '\\ backslash',
+    '/ forward slash',
+    '/ escaped forward slash',
+    '$/ escaped opening dollar slashy',
+    '/$ escaped closing dollar slashy'
+].every { dollarSlashy.contains(it) }
+
+
